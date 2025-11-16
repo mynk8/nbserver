@@ -9,7 +9,7 @@ import (
 
 func main() {
 	terminal := websockets.NewPTYTerminal()
-	sessionManager := websockets.NewInMemorySessionManager()
+	sessionManager := websockets.NewInMemorySessionManager(1)
 	
 	handler := websockets.NewTerminalHandler(
 		terminal,

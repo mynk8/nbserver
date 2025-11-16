@@ -13,7 +13,7 @@ type Terminal interface {
 }
 
 type SessionManager interface {
-	CreateSession(tty *os.File, cmd *exec.Cmd) string
+	CreateSession(tty *os.File, cmd *exec.Cmd) (string, error)
 	GetSession(sessionId string) (*PTY, bool)
 	DeleteSession(sessionId string)
 }

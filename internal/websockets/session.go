@@ -2,6 +2,7 @@ package websockets
 
 import (
 	"fmt"
+	"errors"
 	"os"
 	"os/exec"
 	"sync"
@@ -9,22 +10,36 @@ import (
 )
 
 type InMemorySessionManager struct {
-	sessions map[string]*PTY
-	mu       sync.RWMutex
+	sessions    map[string]*PTY
+	mu          sync.RWMutex
+	maxSessions int
 }
 
-func NewInMemorySessionManager() *InMemorySessionManager {
+var (
+	connectionLimitExceededError = errors.New("maximum connection limit exceeded")
+)
+
+func NewInMemorySessionManager(maxSessions int) *InMemorySessionManager {
+	if (maxSessions == 0) || (maxSessions >= 2) {
+		maxSessions = 2
+	}
+
 	return &InMemorySessionManager{
-		sessions: make(map[string]*PTY),
+		sessions:    make(map[string]*PTY),
+		maxSessions: maxSessions,
 	}
 }
 
-func (sm *InMemorySessionManager) CreateSession(tty *os.File, cmd *exec.Cmd) string {
-	sessionID := sm.generateSessionID()
+func (sm *InMemorySessionManager) CreateSession(tty *os.File, cmd *exec.Cmd) (string, error) {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
+	if len(sm.sessions) > 2 {
+		fmt.Printf("Cannot create any more connections")
+		return "", connectionLimitExceededError
+	}
+	sessionID := sm.generateSessionID()
 	sm.sessions[sessionID] = &PTY{TTY: tty, cmd: cmd}
-	return sessionID
+	return sessionID, nil
 }
 
 func (sm *InMemorySessionManager) GetSession(sessionId string) (*PTY, bool) {

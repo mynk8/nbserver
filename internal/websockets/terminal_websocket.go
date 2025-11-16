@@ -13,13 +13,13 @@ var upgrader = websocket.Upgrader{}
 
 // TerminalHandler handles terminal websocket connections
 type TerminalHandler struct {
-	terminal        Terminal
-	sessionManager  SessionManager
-	messageHandler  *TerminalMessageHandler
-	keepAliveMgr    *KeepAliveManager
-	command         string
-	errorLimit      int
-	bufferSize      int
+	terminal       Terminal
+	sessionManager SessionManager
+	messageHandler *TerminalMessageHandler
+	keepAliveMgr   *KeepAliveManager
+	command        string
+	errorLimit     int
+	bufferSize     int
 }
 
 func NewTerminalHandler(
@@ -58,7 +58,16 @@ func (th *TerminalHandler) Connect(w http.ResponseWriter, r *http.Request, h htt
 		return fmt.Errorf("failed to start terminal: %w", err)
 	}
 
-	sessionId := th.sessionManager.CreateSession(tty, cmd)
+	sessionId, err := th.sessionManager.CreateSession(tty, cmd)
+	if err != nil {
+		if tty != nil {
+			tty.Close()
+		}
+		if cmd != nil && cmd.Process != nil {
+			cmd.Process.Kill()
+		}
+		return fmt.Errorf("failed to create connection")
+	}
 	defer th.sessionManager.DeleteSession(sessionId)
 
 	var waiter sync.WaitGroup
