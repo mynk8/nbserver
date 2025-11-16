@@ -8,11 +8,9 @@ import (
 )
 
 func main() {
-	// Create dependencies following Dependency Inversion Principle
 	terminal := websockets.NewPTYTerminal()
 	sessionManager := websockets.NewInMemorySessionManager()
 	
-	// Create terminal handler with configurable command (default: "bash")
 	handler := websockets.NewTerminalHandler(
 		terminal,
 		sessionManager,
